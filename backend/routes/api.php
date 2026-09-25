@@ -22,6 +22,12 @@ use Illuminate\Support\Facades\Route;
 Route::post('/login', [AuthController::class, 'login'])->name('login');
 Route::post('/two-factor/verify', [AuthController::class, 'verifyTwoFactor']);
 
+// Temporary Seed Route (Run once to populate database)
+Route::get('/seed', function () {
+    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
+    return 'Database seeded successfully! You can now log in.';
+});
+
 // ── Protected (Sanctum token required) ───────────────────────
 Route::middleware('auth:sanctum')->group(function () {
 
