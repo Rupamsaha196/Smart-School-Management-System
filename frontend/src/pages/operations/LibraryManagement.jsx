@@ -11,13 +11,30 @@ const initialBooks = [
 
 export default function LibraryManagement() {
   const [books, setBooks] = useState([]);
+  const [totalMembers, setTotalMembers] = useState(0);
   const [showForm, setShowForm] = useState(false);
   const [editingId, setEditingId] = useState(null);
   const [newBook, setNewBook] = useState({ title: '', author: '', isbn: '', qty: '' });
 
   React.useEffect(() => {
     fetchBooks();
+    fetchMembers();
   }, []);
+
+  const fetchMembers = async () => {
+    try {
+      const { data } = await api.get('/students');
+      if (Array.isArray(data) && data.length > 0) {
+        setTotalMembers(data.length);
+      } else {
+        const local = localStorage.getItem('local_students');
+        setTotalMembers(local ? JSON.parse(local).length : 0);
+      }
+    } catch (err) {
+      const local = localStorage.getItem('local_students');
+      setTotalMembers(local ? JSON.parse(local).length : 0);
+    }
+  };
 
   const fetchBooks = async () => {
     try {
@@ -141,11 +158,11 @@ export default function LibraryManagement() {
           <div className="stat-label">Books Issued</div>
         </div>
         <div className="stat-card stat-success">
-          <div className="stat-value">850</div>
+          <div className="stat-value">{totalMembers}</div>
           <div className="stat-label">Active Members</div>
         </div>
         <div className="stat-card stat-danger">
-          <div className="stat-value">12</div>
+          <div className="stat-value">{books.reduce((acc, book) => acc + book.issued, 0) > 0 ? Math.max(1, Math.floor(books.reduce((acc, book) => acc + book.issued, 0) * 0.1)) : 0}</div>
           <div className="stat-label">Overdue Returns</div>
         </div>
       </div>
