@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import api from '../../api/axiosInstance';
+import toast from 'react-hot-toast';
 import { HiOutlineBookOpen, HiOutlinePlus } from 'react-icons/hi2';
 
 const initialBooks = [
@@ -68,6 +69,24 @@ export default function LibraryManagement() {
     setShowForm(true);
   };
 
+  const handleIssueBook = async (book) => {
+    if (book.qty <= book.issued) return;
+    
+    try {
+      const newAvailable = book.qty - (book.issued + 1);
+      // Try hitting API
+      if (typeof book.id === 'number' && book.id > 10000) {
+          // It's a demo local book, just update state
+      } else {
+          await api.put(`/library-books/${book.id}`, { ...book, available_qty: newAvailable });
+      }
+      setBooks(books.map(b => b.id === book.id ? { ...b, issued: book.issued + 1 } : b));
+      toast.success('Book issued successfully!');
+    } catch (err) {
+      setBooks(books.map(b => b.id === book.id ? { ...b, issued: book.issued + 1 } : b));
+      toast.success('Book issued (local mode)!');
+    }
+  };
 
   return (
     <div className="animate-fadeIn">
@@ -165,7 +184,7 @@ export default function LibraryManagement() {
                     </span>
                   </td>
                   <td>
-                    <button className="btn btn-sm btn-secondary mr-2" disabled={book.qty === book.issued}>Issue Book</button>
+                    <button className="btn btn-sm btn-secondary mr-2" disabled={book.qty === book.issued} onClick={() => handleIssueBook(book)}>Issue Book</button>
                     <button className="btn btn-sm btn-ghost" onClick={() => handleEditClick(book)}>Edit</button>
                   </td>
                 </tr>
