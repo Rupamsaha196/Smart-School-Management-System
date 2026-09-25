@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import toast from 'react-hot-toast';
 import { HiOutlinePlus, HiOutlineMagnifyingGlass, HiOutlineEye, HiOutlinePencil, HiOutlineTrash } from 'react-icons/hi2';
@@ -16,6 +16,7 @@ const demoStudents = [
 ];
 
 export default function StudentList() {
+  const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [search, setSearch] = useState('');
   const [filterClass, setFilterClass] = useState('');
@@ -197,7 +198,11 @@ export default function StudentList() {
                         <Link to={`/students/${student.id}`} className="btn btn-ghost btn-icon btn-sm" title="View">
                           <HiOutlineEye size={16} />
                         </Link>
-                        <button className="btn btn-ghost btn-icon btn-sm" title="Edit">
+                        <button 
+                          className="btn btn-ghost btn-icon btn-sm" 
+                          title="Edit"
+                          onClick={() => navigate('/students/admission', { state: { student, isEdit: true } })}
+                        >
                           <HiOutlinePencil size={16} />
                         </button>
                         <button

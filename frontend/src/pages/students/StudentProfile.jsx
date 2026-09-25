@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import api from '../../api/axiosInstance';
 import {
   HiOutlineUser, HiOutlinePhone, HiOutlineEnvelope, HiOutlineMapPin,
@@ -38,6 +38,7 @@ const attendanceSummary = { total: 120, present: 112, absent: 6, late: 2, percen
 
 export default function StudentProfile() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('overview');
   const [student, setStudent] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -115,7 +116,9 @@ export default function StudentProfile() {
             <p className="subtitle">Admission No: {s.admission_no}</p>
           </div>
         </div>
-        <button className="btn btn-primary"><HiOutlinePencil size={16} /> Edit Profile</button>
+        <button className="btn btn-primary" onClick={() => navigate('/students/admission', { state: { student: s, isEdit: true } })}>
+          <HiOutlinePencil size={16} /> Edit Profile
+        </button>
       </div>
 
       {/* Profile Header Card */}

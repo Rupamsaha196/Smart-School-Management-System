@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosInstance';
 import { HiOutlineArrowLeft, HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineCloudArrowUp } from 'react-icons/hi2';
@@ -8,10 +8,17 @@ const steps = ['Personal Info', 'Contact Details', 'Parent/Guardian', 'Documents
 
 export default function AdmissionForm() {
   const navigate = useNavigate();
+  const { state } = useLocation();
+  const isEdit = state?.isEdit || false;
+
   const [currentStep, setCurrentStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
-  const [formData, setFormData] = useState({
-    // Personal
+  const [formData, setFormData] = useState(() => {
+    if (isEdit && state?.student) {
+      return { ...state.student };
+    }
+    return {
+      // Personal
     first_name: '', last_name: '', dob: '', gender: '', blood_group: '',
     religion: '', category: '', caste: '', admission_date: new Date().toISOString().split('T')[0],
     class_id: '', section_id: '', roll_no: '', rte: 'No',
@@ -54,6 +61,13 @@ export default function AdmissionForm() {
 
     setSubmitting(true);
     try {
+      if (isEdit) {
+        await api.put(`/students/${formData.id}`, formData);
+        toast.success(`Student profile updated successfully!`);
+        navigate('/students');
+        return;
+      }
+
       const response = await api.post('/students', formData);
       const newStudent = response.data;
       
@@ -109,8 +123,8 @@ export default function AdmissionForm() {
     <div className="animate-fadeIn">
       <div className="page-header">
         <div>
-          <h1>New Admission</h1>
-          <p className="subtitle">Register a new student</p>
+          <h1>{isEdit ? 'Edit Student Profile' : 'New Admission'}</h1>
+          <p className="subtitle">{isEdit ? `Editing details for ${formData.first_name}` : 'Register a new student'}</p>
         </div>
       </div>
 
@@ -366,10 +380,10 @@ export default function AdmissionForm() {
             ) : (
               <button type="submit" className="btn btn-success" disabled={submitting}>
                 {submitting ? (
-                  'Submitting Admission...'
+                  isEdit ? 'Saving Changes...' : 'Submitting Admission...'
                 ) : (
                   <>
-                    <HiOutlineCheckCircle size={18} /> Submit Admission
+                    <HiOutlineCheckCircle size={18} /> {isEdit ? 'Save Changes' : 'Submit Admission'}
                   </>
                 )}
               </button>
