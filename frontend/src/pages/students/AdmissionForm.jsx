@@ -31,6 +31,7 @@ export default function AdmissionForm() {
     guardian_name: '', guardian_relation: '', guardian_phone: '', guardian_email: '',
     // Documents
     documents: [],
+    };
   });
 
   const handleChange = (e) => {
