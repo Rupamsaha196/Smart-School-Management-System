@@ -7,6 +7,7 @@ use App\Models\CustomField;
 use App\Models\QrAttendanceLog;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Hash;
 
 class DatabaseSeeder extends Seeder
 {
@@ -18,22 +19,22 @@ class DatabaseSeeder extends Seeder
         // ── Demo Users ───────────────────────────────────────────
         User::updateOrCreate(
             ['email' => 'admin@smartschool.com'],
-            ['name' => 'Admin User', 'password' => 'password', 'role' => 'admin']
+            ['name' => 'Admin User', 'password' => Hash::make('password'), 'role' => 'admin']
         );
 
         User::updateOrCreate(
             ['email' => 'teacher@smartschool.com'],
-            ['name' => 'Teacher User', 'password' => 'password', 'role' => 'teacher']
+            ['name' => 'Teacher User', 'password' => Hash::make('password'), 'role' => 'teacher']
         );
 
         User::updateOrCreate(
             ['email' => 'accountant@smartschool.com'],
-            ['name' => 'Accountant User', 'password' => 'password', 'role' => 'accountant']
+            ['name' => 'Accountant User', 'password' => Hash::make('password'), 'role' => 'accountant']
         );
 
         User::updateOrCreate(
             ['email' => 'parent@smartschool.com'],
-            ['name' => 'Parent User', 'password' => 'password', 'role' => 'parent']
+            ['name' => 'Parent User', 'password' => Hash::make('password'), 'role' => 'parent']
         );
 
         // ── Calendar Events ──────────────────────────────────────
