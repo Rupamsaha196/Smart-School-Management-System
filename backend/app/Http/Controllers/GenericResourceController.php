@@ -16,7 +16,7 @@ class GenericResourceController extends Controller
         // Detect table based on route prefix, e.g. api/subjects -> subjects
         $segments = $request->segments();
         if (count($segments) >= 2 && $segments[0] === 'api') {
-            $this->table = $segments[1];
+            $this->table = str_replace('-', '_', $segments[1]);
             // Normalize for model/table differences
             if ($this->table === 'classes') $this->table = 'school_classes';
         }
