@@ -156,6 +156,8 @@ function AdminDashboard({ user }) {
     totalStaff: 0,
     feesCollected: '₹0',
     attendance: '0%',
+    attendanceData: [],
+    feeData: [],
   });
 
   React.useEffect(() => {
@@ -236,7 +238,7 @@ function AdminDashboard({ user }) {
             <span className="badge badge-success">This Week</span>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <BarChart data={attendanceData} barGap={4}>
+            <BarChart data={stats.attendanceData?.length ? stats.attendanceData : attendanceData} barGap={4}>
               <CartesianGrid strokeDasharray="3 3" stroke="rgba(148,163,184,0.08)" />
               <XAxis dataKey="day" stroke="#64748b" fontSize={12} />
               <YAxis stroke="#64748b" fontSize={12} />
@@ -262,7 +264,7 @@ function AdminDashboard({ user }) {
             <span className="badge badge-warning">2025-26</span>
           </div>
           <ResponsiveContainer width="100%" height={260}>
-            <AreaChart data={feeData}>
+            <AreaChart data={stats.feeData?.length ? stats.feeData : feeData}>
               <defs>
                 <linearGradient id="colorCollected" x1="0" y1="0" x2="0" y2="1">
                   <stop offset="5%" stopColor="#6366f1" stopOpacity={0.3} />
