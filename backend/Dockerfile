@@ -1,26 +1,25 @@
-FROM richarvey/nginx-php-fpm:3.1.6
+FROM webdevops/php-nginx:8.3
 
-COPY . .
+# Set the document root for NGINX to Laravel's public folder
+ENV WEB_DOCUMENT_ROOT=/app/public
+ENV WEB_DOCUMENT_INDEX=index.php
+ENV APP_ENV=production
 
-# Set environment variables for the image
-ENV WEBROOT /var/www/html/public
-ENV PHP_ERRORS_STDERR 1
-ENV RUN_SCRIPTS 1
-ENV REAL_IP_HEADER 1
-ENV COMPOSER_ALLOW_SUPERUSER 1
+WORKDIR /app
+COPY . /app
 
-# Install dependencies
+# Install dependencies using Composer
 RUN composer install --no-interaction --optimize-autoloader --no-dev
 
-# Setup permissions
-RUN chmod -R 777 storage bootstrap/cache database
+# Give the correct permissions to the web server user (application)
+RUN chown -R application:application /app/storage /app/bootstrap/cache /app/database
 
-# Create a startup script to run migrations and caching
+# Automatically run Laravel caching and migrations when the server starts
 RUN echo '#!/bin/sh\n\
 php artisan config:cache\n\
 php artisan route:cache\n\
 php artisan view:cache\n\
 php artisan migrate --force\n\
-' > /var/www/html/scripts/00-laravel-deploy.sh
+' > /opt/docker/provision/entrypoint.d/20-laravel-setup.sh
 
-RUN chmod +x /var/www/html/scripts/00-laravel-deploy.sh
+RUN chmod +x /opt/docker/provision/entrypoint.d/20-laravel-setup.sh
