@@ -64,6 +64,17 @@ return new class extends Migration
             $table->timestamps();
         });
 
+        Schema::create('book_issues', function (Blueprint $table) {
+            $table->id();
+            $table->foreignId('book_id'); // foreign key not enforced strictly for demo
+            $table->string('student_name'); // simplified for demo instead of full FK
+            $table->date('issue_date');
+            $table->date('due_date');
+            $table->date('return_date')->nullable();
+            $table->string('status')->default('issued'); // issued, returned, overdue
+            $table->timestamps();
+        });
+
         Schema::create('transport_routes', function (Blueprint $table) {
             $table->id();
             $table->string('route_name');
@@ -88,6 +99,7 @@ return new class extends Migration
     {
         Schema::dropIfExists('hostels');
         Schema::dropIfExists('transport_routes');
+        Schema::dropIfExists('book_issues');
         Schema::dropIfExists('library_books');
         Schema::dropIfExists('transactions');
         Schema::dropIfExists('fee_types');
