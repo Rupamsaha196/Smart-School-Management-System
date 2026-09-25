@@ -11,6 +11,7 @@ const initialBooks = [
 export default function LibraryManagement() {
   const [books, setBooks] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [editingId, setEditingId] = useState(null);
   const [newBook, setNewBook] = useState({ title: '', author: '', isbn: '', qty: '' });
 
   React.useEffect(() => {
@@ -30,18 +31,43 @@ export default function LibraryManagement() {
     }
   };
 
-  const handleAddBook = (e) => {
+  const handleSaveBook = async (e) => {
     e.preventDefault();
     if (!newBook.title || !newBook.author) return;
-    setBooks([{ 
-      id: Date.now(), 
-      ...newBook,
-      qty: Number(newBook.qty) || 1,
-      issued: 0
-    }, ...books]);
-    setShowForm(false);
-    setNewBook({ title: '', author: '', isbn: '', qty: '' });
+
+    try {
+      if (editingId) {
+        await api.put(`/library-books/${editingId}`, { ...newBook, qty: Number(newBook.qty) || 1 });
+        setBooks(books.map(b => b.id === editingId ? { ...b, ...newBook, qty: Number(newBook.qty) || 1 } : b));
+      } else {
+        const payload = { ...newBook, qty: Number(newBook.qty) || 1, available_qty: Number(newBook.qty) || 1 };
+        const response = await api.post('/library-books', payload);
+        const savedBook = response.data || { id: Date.now(), ...payload, issued: 0 };
+        setBooks([{ ...savedBook, issued: 0 }, ...books]);
+      }
+      setShowForm(false);
+      setEditingId(null);
+      setNewBook({ title: '', author: '', isbn: '', qty: '' });
+    } catch (error) {
+      console.error('Failed to save book:', error);
+      // Fallback for demo mode
+      if (editingId) {
+        setBooks(books.map(b => b.id === editingId ? { ...b, ...newBook, qty: Number(newBook.qty) || 1 } : b));
+      } else {
+        setBooks([{ id: Date.now(), ...newBook, qty: Number(newBook.qty) || 1, issued: 0 }, ...books]);
+      }
+      setShowForm(false);
+      setEditingId(null);
+      setNewBook({ title: '', author: '', isbn: '', qty: '' });
+    }
   };
+
+  const handleEditClick = (book) => {
+    setNewBook({ title: book.title, author: book.author, isbn: book.isbn, qty: book.qty });
+    setEditingId(book.id);
+    setShowForm(true);
+  };
+
 
   return (
     <div className="animate-fadeIn">
@@ -58,9 +84,9 @@ export default function LibraryManagement() {
       {showForm && (
         <div className="card mb-6 animate-slideUp">
           <div className="card-header">
-            <span className="card-title">Add New Book</span>
+            <span className="card-title">{editingId ? 'Edit Book' : 'Add New Book'}</span>
           </div>
-          <form className="p-4 grid-3" onSubmit={handleAddBook}>
+          <form className="p-4 grid-3" onSubmit={handleSaveBook}>
             <div className="form-group mb-0">
               <label>Book Title</label>
               <input type="text" className="form-input" placeholder="e.g. The Great Gatsby" value={newBook.title} onChange={e => setNewBook({...newBook, title: e.target.value})} required />
@@ -79,7 +105,7 @@ export default function LibraryManagement() {
             </div>
             <div className="form-group flex items-end mb-0 mt-4" style={{ gridColumn: 'span 2' }}>
               <button type="submit" className="btn btn-success w-full" style={{ height: '42px' }}>
-                Save Book
+                {editingId ? 'Update Book' : 'Save Book'}
               </button>
             </div>
           </form>
@@ -140,7 +166,7 @@ export default function LibraryManagement() {
                   </td>
                   <td>
                     <button className="btn btn-sm btn-secondary mr-2" disabled={book.qty === book.issued}>Issue Book</button>
-                    <button className="btn btn-sm btn-ghost">Edit</button>
+                    <button className="btn btn-sm btn-ghost" onClick={() => handleEditClick(book)}>Edit</button>
                   </td>
                 </tr>
               ))}
