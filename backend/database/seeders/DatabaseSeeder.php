@@ -16,33 +16,25 @@ class DatabaseSeeder extends Seeder
     public function run(): void
     {
         // ── Demo Users ───────────────────────────────────────────
-        User::create([
-            'name'     => 'Admin User',
-            'email'    => 'admin@smartschool.com',
-            'password' => 'password',
-            'role'     => 'admin',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'admin@smartschool.com'],
+            ['name' => 'Admin User', 'password' => 'password', 'role' => 'admin']
+        );
 
-        User::create([
-            'name'     => 'Teacher User',
-            'email'    => 'teacher@smartschool.com',
-            'password' => 'password',
-            'role'     => 'teacher',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'teacher@smartschool.com'],
+            ['name' => 'Teacher User', 'password' => 'password', 'role' => 'teacher']
+        );
 
-        User::create([
-            'name'     => 'Accountant User',
-            'email'    => 'accountant@smartschool.com',
-            'password' => 'password',
-            'role'     => 'accountant',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'accountant@smartschool.com'],
+            ['name' => 'Accountant User', 'password' => 'password', 'role' => 'accountant']
+        );
 
-        User::create([
-            'name'     => 'Parent User',
-            'email'    => 'parent@smartschool.com',
-            'password' => 'password',
-            'role'     => 'parent',
-        ]);
+        User::updateOrCreate(
+            ['email' => 'parent@smartschool.com'],
+            ['name' => 'Parent User', 'password' => 'password', 'role' => 'parent']
+        );
 
         // ── Calendar Events ──────────────────────────────────────
         CalendarEvent::insert([

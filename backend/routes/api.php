@@ -24,8 +24,12 @@ Route::post('/two-factor/verify', [AuthController::class, 'verifyTwoFactor']);
 
 // Temporary Seed Route (Run once to populate database)
 Route::get('/seed', function () {
-    \Illuminate\Support\Facades\Artisan::call('db:seed', ['--force' => true]);
-    return 'Database seeded successfully! You can now log in.';
+    \Illuminate\Support\Facades\Artisan::call('migrate:fresh', ['--seed' => true, '--force' => true]);
+    return 'Database completely rebuilt and seeded successfully! You can now log in.';
+});
+
+Route::get('/check-users', function () {
+    return \App\Models\User::all();
 });
 
 // ── Protected (Sanctum token required) ───────────────────────
