@@ -105,12 +105,27 @@ class StaffController extends Controller
             'time_out'  => 'nullable|date_format:H:i',
         ]);
 
-        $record = StaffAttendance::updateOrCreate(
-            ['staff_id' => $request->staff_id, 'date' => $request->date],
-            $request->only('status', 'remark', 'time_in', 'time_out')
-        );
+        $date = date('Y-m-d', strtotime($request->date));
+        $existing = StaffAttendance::where('staff_id', $request->staff_id)
+            ->where(function($q) use ($date) {
+                $q->where('date', $date)->orWhereDate('date', $date);
+            })->first();
 
-        return response()->json($record);
+        if ($existing) {
+            $existing->update($request->only('status', 'remark', 'time_in', 'time_out'));
+            return response()->json($existing->fresh());
+        }
+
+        $record = StaffAttendance::create([
+            'staff_id' => $request->staff_id,
+            'date'     => $date,
+            'status'   => $request->status,
+            'remark'   => $request->remark,
+            'time_in'  => $request->time_in,
+            'time_out' => $request->time_out,
+        ]);
+
+        return response()->json($record, 201);
     }
 
     public function bulkMarkAttendance(Request $request)
@@ -122,7 +137,7 @@ class StaffController extends Controller
             'records.*.status'   => 'required|string',
         ]);
 
-        $date = $request->date;
+        $date = date('Y-m-d', strtotime($request->date));
         $count = 0;
 
         foreach ($request->records as $item) {
@@ -132,15 +147,28 @@ class StaffController extends Controller
                 $status = 'Present';
             }
 
-            StaffAttendance::updateOrCreate(
-                ['staff_id' => $item['staff_id'], 'date' => $date],
-                [
+            $existing = StaffAttendance::where('staff_id', $item['staff_id'])
+                ->where(function($q) use ($date) {
+                    $q->where('date', $date)->orWhereDate('date', $date);
+                })->first();
+
+            if ($existing) {
+                $existing->update([
                     'status'   => $status,
                     'remark'   => $item['remark'] ?? null,
                     'time_in'  => $item['time_in'] ?? null,
                     'time_out' => $item['time_out'] ?? null,
-                ]
-            );
+                ]);
+            } else {
+                StaffAttendance::create([
+                    'staff_id' => $item['staff_id'],
+                    'date'     => $date,
+                    'status'   => $status,
+                    'remark'   => $item['remark'] ?? null,
+                    'time_in'  => $item['time_in'] ?? null,
+                    'time_out' => $item['time_out'] ?? null,
+                ]);
+            }
             $count++;
         }
 

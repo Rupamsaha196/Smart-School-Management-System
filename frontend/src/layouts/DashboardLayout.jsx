@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import Sidebar from './Sidebar';
 import Header from './Header';
+import WhatsAppWidget from '../components/WhatsAppWidget';
 
 export default function DashboardLayout() {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
@@ -18,6 +19,7 @@ export default function DashboardLayout() {
           <Outlet />
         </div>
       </div>
+      <WhatsAppWidget />
     </div>
   );
 }

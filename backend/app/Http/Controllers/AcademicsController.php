@@ -97,16 +97,26 @@ class AcademicsController extends Controller
      */
     public function promoteStudents(Request $request)
     {
+        $toClass = $request->to_class ?? $request->to_class_id ?? $request->target_class;
+        $toSection = $request->to_section ?? $request->to_section_id ?? $request->target_section ?? 'A';
+        $academicYear = $request->academic_year ?? $request->target_session ?? $request->session ?? '2026-2027';
+
+        $request->merge([
+            'to_class'      => $toClass,
+            'to_section'    => $toSection,
+            'academic_year' => $academicYear,
+        ]);
+
         $request->validate([
             'student_ids'   => 'required|array',
             'student_ids.*' => 'exists:students,id',
             'to_class'      => 'required|string',
-            'to_section'    => 'required|string',
-            'academic_year' => 'required|integer',
-            'result'        => 'nullable|in:Promoted,Failed,Detained',
+            'to_section'    => 'nullable|string',
+            'academic_year' => 'required',
+            'result'        => 'nullable|string',
         ]);
 
-        $promotedBy = $request->user()->id;
+        $promotedBy = $request->user()?->id ?? 1;
         $count = 0;
 
         foreach ($request->student_ids as $studentId) {
@@ -118,9 +128,9 @@ class AcademicsController extends Controller
                 'student_id'    => $student->id,
                 'from_class'    => $student->class_id,
                 'from_section'  => $student->section_id,
-                'to_class'      => $request->to_class,
-                'to_section'    => $request->to_section,
-                'academic_year' => $request->academic_year,
+                'to_class'      => $toClass,
+                'to_section'    => $toSection,
+                'academic_year' => is_numeric($academicYear) ? (int)$academicYear : 2026,
                 'result'        => $request->result ?? 'Promoted',
                 'promoted_by'   => $promotedBy,
             ]);
@@ -128,8 +138,8 @@ class AcademicsController extends Controller
             // Update student's class/section
             if (($request->result ?? 'Promoted') === 'Promoted') {
                 $student->update([
-                    'class_id'   => $request->to_class,
-                    'section_id' => $request->to_section,
+                    'class_id'   => $toClass,
+                    'section_id' => $toSection,
                 ]);
             }
 

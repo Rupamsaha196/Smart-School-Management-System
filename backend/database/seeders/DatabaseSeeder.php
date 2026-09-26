@@ -373,5 +373,68 @@ class DatabaseSeeder extends Seeder
                 ]);
             }
         }
+
+        // ── School Settings (Module 44 & 37) ─────────────────────────
+        if (\Illuminate\Support\Facades\DB::table('school_settings')->count() === 0) {
+            \Illuminate\Support\Facades\DB::table('school_settings')->insert([
+                'school_name'                => 'Smart School International',
+                'tagline'                    => 'Excellence in Holistic Education',
+                'email'                      => 'contact@smartschool.edu',
+                'phone'                      => '+91 98765 43210',
+                'address'                    => 'Plot 42, Institutional Area, Sector 15, Noida, UP - 201301',
+                'active_session'             => '2025-2026',
+                'currency'                   => 'INR',
+                'currency_symbol'            => '₹',
+                'receipt_prefix'             => 'SS-REC-',
+                'thermal_format'             => '80mm',
+                'whatsapp_number'            => '+919876543210',
+                'whatsapp_default_message'   => 'Hello Smart School! I need information about student admissions and fee structure.',
+                'current_campus'             => 'Main Campus - Sector 15',
+                'available_campuses'         => json_encode(['Main Campus - Sector 15', 'North Wing Campus', 'South City Branch']),
+                'online_processing_fee_pct'  => 1.50,
+                'created_at'                 => now(),
+                'updated_at'                 => now(),
+            ]);
+        }
+
+        // ── Academic Sessions (Module 40) ─────────────────────────────
+        if (\Illuminate\Support\Facades\DB::table('academic_sessions')->count() === 0) {
+            \Illuminate\Support\Facades\DB::table('academic_sessions')->insert([
+                ['name' => '2025-2026', 'start_date' => '2025-04-01', 'end_date' => '2026-03-31', 'is_active' => true, 'created_at' => now(), 'updated_at' => now()],
+                ['name' => '2026-2027', 'start_date' => '2026-04-01', 'end_date' => '2027-03-31', 'is_active' => false, 'created_at' => now(), 'updated_at' => now()],
+                ['name' => '2024-2025', 'start_date' => '2024-04-01', 'end_date' => '2025-03-31', 'is_active' => false, 'created_at' => now(), 'updated_at' => now()],
+            ]);
+        }
+
+        // ── Live Virtual Classes (Module 20) ───────────────────────────
+        if (\Illuminate\Support\Facades\DB::table('live_classes')->count() === 0) {
+            \Illuminate\Support\Facades\DB::table('live_classes')->insert([
+                ['title' => 'Linear Equations in Two Variables', 'subject' => 'Mathematics', 'class_name' => 'Class 10', 'date' => now()->toDateString(), 'time' => '10:00 AM - 11:00 AM', 'platform' => 'Zoom', 'link' => 'https://zoom.us/j/1234567890', 'status' => 'Live', 'teacher_name' => 'Rajesh Sharma', 'created_at' => now(), 'updated_at' => now()],
+                ['title' => 'Ray Optics and Wave Theory', 'subject' => 'Physics', 'class_name' => 'Class 12', 'date' => now()->toDateString(), 'time' => '11:30 AM - 12:30 PM', 'platform' => 'Google Meet', 'link' => 'https://meet.google.com/abc-defg-hij', 'status' => 'Upcoming', 'teacher_name' => 'Dr. Sunita Verma', 'created_at' => now(), 'updated_at' => now()],
+                ['title' => 'Indian National Movement', 'subject' => 'History', 'class_name' => 'Class 9', 'date' => now()->addDay()->toDateString(), 'time' => '09:00 AM - 10:00 AM', 'platform' => 'Google Meet', 'link' => 'https://meet.google.com/xyz-uvwx-rst', 'status' => 'Upcoming', 'teacher_name' => 'Amit Kumar', 'created_at' => now(), 'updated_at' => now()],
+            ]);
+        }
+
+        // ── Download Center Materials (Module 14) ──────────────────────
+        if (\Illuminate\Support\Facades\DB::table('download_materials')->count() === 0) {
+            \Illuminate\Support\Facades\DB::table('download_materials')->insert([
+                ['title' => 'CBSE Mathematics Annual Syllabus 2025-26', 'type' => 'Syllabus', 'class_name' => 'Class 10', 'file_path' => '/storage/materials/math_syllabus_class10.pdf', 'file_size' => '1.2 MB', 'description' => 'Complete chapter-wise syllabus and marking scheme', 'created_at' => now(), 'updated_at' => now()],
+                ['title' => 'Physics Mechanics & Optics Question Bank', 'type' => 'Study Material', 'class_name' => 'Class 12', 'file_path' => '/storage/materials/physics_notes_class12.pdf', 'file_size' => '3.5 MB', 'description' => 'Key formulas, derivations and exemplar solved problems', 'created_at' => now(), 'updated_at' => now()],
+                ['title' => 'English Creative Writing & Grammar Assignment', 'type' => 'Assignment', 'class_name' => 'Class 8', 'file_path' => '/storage/materials/english_assignment_class8.pdf', 'file_size' => '850 KB', 'description' => 'Autumn vacation practice assignment', 'created_at' => now(), 'updated_at' => now()],
+                ['title' => 'Annual Examination Comprehensive Timetable', 'type' => 'Other', 'class_name' => 'All Classes', 'file_path' => '/storage/materials/annual_exam_timetable.pdf', 'file_size' => '420 KB', 'description' => 'Detailed exam routine with instructions', 'created_at' => now(), 'updated_at' => now()],
+            ]);
+        }
+
+        // ── Fee Discounts & Fines (Module 33 & 34) ─────────────────────
+        if (\Illuminate\Support\Facades\DB::table('fee_discounts')->count() === 0) {
+            $firstStudent = \App\Models\Student::first();
+            $firstFeeType = \Illuminate\Support\Facades\DB::table('fee_types')->first();
+            if ($firstStudent && $firstFeeType) {
+                \Illuminate\Support\Facades\DB::table('fee_discounts')->insert([
+                    ['student_id' => $firstStudent->id, 'fee_type_id' => $firstFeeType->id, 'discount_name' => 'Sibling Concession', 'discount_type' => 'Percentage', 'value' => 15.00, 'reason' => '15% discount for younger sibling enrolled in school', 'created_at' => now(), 'updated_at' => now()],
+                    ['student_id' => $firstStudent->id, 'fee_type_id' => $firstFeeType->id, 'discount_name' => 'Academic Merit Scholarship', 'discount_type' => 'Percentage', 'value' => 25.00, 'reason' => '25% scholarship for students scoring 95%+ in annual exams', 'created_at' => now(), 'updated_at' => now()],
+                ]);
+            }
+        }
     }
 }

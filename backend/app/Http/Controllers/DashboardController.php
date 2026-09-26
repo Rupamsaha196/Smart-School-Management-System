@@ -13,7 +13,7 @@ use Illuminate\Support\Facades\DB;
 
 class DashboardController extends Controller
 {
-    public function index(Request $request)
+    public function index(?Request $request = null)
     {
         $totalStudents  = Student::count();
         $totalStaff     = Staff::count();
@@ -107,11 +107,16 @@ class DashboardController extends Controller
 
         return response()->json([
             'totalStudents'       => $totalStudents,
+            'total_students'      => $totalStudents,
             'totalStaff'          => $totalStaff,
+            'total_staff'         => $totalStaff,
             'feesCollected'       => '₹' . number_format($feesCollected),
+            'fees_collected'      => $feesCollected,
             'feesPending'         => '₹' . number_format($feesPending),
+            'fees_pending'        => $feesPending,
             'attendance'          => $attendancePercent,
             'totalNotices'        => $totalNotices,
+            'total_notices'       => $totalNotices,
             'studentsByClass'     => $studentsByClass,
             'genderBreakdown'     => $genderBreakdown,
             'attendanceData'      => $attendanceData,

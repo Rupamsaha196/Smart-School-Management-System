@@ -185,11 +185,19 @@ class StudentController extends Controller
     {
         $student->load(['fees', 'examResults', 'attendances']);
         
+        $dobStr = null;
+        if ($student->dob) {
+            $dobStr = is_object($student->dob) ? $student->dob->format('Y-m-d') : date('Y-m-d', strtotime($student->dob));
+        }
+
+        $tcNumber = 'TC-' . date('Y') . '-' . str_pad($student->id, 4, '0', STR_PAD_LEFT);
+
         $tcData = [
             'school_name' => config('app.name', 'Smart School'),
+            'tc_number' => $tcNumber,
             'student_name' => $student->name,
             'admission_no' => $student->admission_no,
-            'dob' => $student->dob ? $student->dob->format('Y-m-d') : null,
+            'dob' => $dobStr,
             'father_name' => $student->father_name,
             'mother_name' => $student->mother_name,
             'leaving_date' => now()->format('Y-m-d'),
@@ -202,6 +210,9 @@ class StudentController extends Controller
 
         return response()->json([
             'message' => 'TC Generated',
+            'tc_number' => $tcNumber,
+            'student_name' => $student->name,
+            'admission_no' => $student->admission_no,
             'tc_data' => $tcData
         ]);
     }

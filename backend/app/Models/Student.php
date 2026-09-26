@@ -48,6 +48,11 @@ class Student extends Model
 
     protected $appends = ['name', 'class_name', 'section'];
 
+    protected $casts = [
+        'dob' => 'date',
+        'admission_date' => 'date',
+    ];
+
     // ── Relationships ─────────────────────────────────────────────────
 
     public function fees()

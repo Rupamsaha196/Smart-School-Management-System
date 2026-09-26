@@ -14,6 +14,7 @@ use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\NoticeController;
 use App\Http\Controllers\QrAttendanceController;
+use App\Http\Controllers\SettingsController;
 use App\Http\Controllers\StaffController;
 use App\Http\Controllers\StudentController;
 use App\Http\Controllers\TimetableController;
@@ -299,4 +300,38 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // ── Custom Fields ─────────────────────────────────────────────────
     Route::apiResource('custom-fields', CustomFieldController::class);
+
+    // ── School Settings & Multi-School (Modules 44 & 37) ──────────────
+    Route::get('/settings', [SettingsController::class, 'getSettings']);
+    Route::put('/settings', [SettingsController::class, 'updateSettings']);
+
+    // ── Academic Sessions (Module 40) ─────────────────────────────────
+    Route::get('/sessions', [SettingsController::class, 'sessions']);
+    Route::post('/sessions', [SettingsController::class, 'storeSession']);
+    Route::put('/sessions/{id}', [SettingsController::class, 'updateSession']);
+    Route::delete('/sessions/{id}', [SettingsController::class, 'destroySession']);
+    Route::post('/sessions/{id}/activate', [SettingsController::class, 'activateSession']);
+
+    // ── Live Virtual Classes (Module 20) ──────────────────────────────
+    Route::get('/live-classes', [SettingsController::class, 'liveClasses']);
+    Route::post('/live-classes', [SettingsController::class, 'storeLiveClass']);
+    Route::put('/live-classes/{id}', [SettingsController::class, 'updateLiveClass']);
+    Route::delete('/live-classes/{id}', [SettingsController::class, 'destroyLiveClass']);
+
+    // ── Download Center (Module 14) ───────────────────────────────────
+    Route::get('/downloads', [SettingsController::class, 'downloads']);
+    Route::post('/downloads', [SettingsController::class, 'storeDownload']);
+    Route::delete('/downloads/{id}', [SettingsController::class, 'destroyDownload']);
+
+    // ── Student CV (Module 23) ────────────────────────────────────────
+    Route::get('/students/{student}/cv', [SettingsController::class, 'studentCv']);
+
+    // ── Thermal Receipt Printing (Module 31) ──────────────────────────
+    Route::get('/fees/{fee}/thermal-receipt', [SettingsController::class, 'thermalReceipt']);
+
+    // ── Quick Fee Creation (Module 32) ────────────────────────────────
+    Route::post('/fees/quick-create', [SettingsController::class, 'quickFeeCreate']);
+
+    // ── Online Payment Processing (Module 35) ─────────────────────────
+    Route::post('/fees/online-checkout', [SettingsController::class, 'onlinePaymentCheckout']);
 });

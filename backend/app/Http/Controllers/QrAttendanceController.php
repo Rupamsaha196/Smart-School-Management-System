@@ -59,10 +59,12 @@ class QrAttendanceController extends Controller
     {
         $today = now()->toDateString();
 
+        $totalCount = QrAttendanceLog::whereDate('scanned_at', $today)->count();
         $stats = [
-            'total'    => QrAttendanceLog::whereDate('scanned_at', $today)->count(),
-            'students' => QrAttendanceLog::whereDate('scanned_at', $today)->where('person_type', 'Student')->count(),
-            'staff'    => QrAttendanceLog::whereDate('scanned_at', $today)->where('person_type', 'Staff')->count(),
+            'total'       => $totalCount,
+            'total_scans' => $totalCount,
+            'students'    => QrAttendanceLog::whereDate('scanned_at', $today)->where('person_type', 'Student')->count(),
+            'staff'       => QrAttendanceLog::whereDate('scanned_at', $today)->where('person_type', 'Staff')->count(),
         ];
 
         return response()->json($stats);

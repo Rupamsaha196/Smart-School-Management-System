@@ -110,14 +110,15 @@ class AttendanceController extends Controller
         $markedCount   = Attendance::whereDate('date', $date)->count();
 
         return response()->json([
-            'date'          => $date,
+            'date'           => $date,
+            'total'          => $totalStudents,
             'total_students' => $totalStudents,
-            'marked'        => $markedCount,
-            'not_marked'    => max(0, $totalStudents - $markedCount),
-            'present'       => $stats['Present'] ?? 0,
-            'absent'        => $stats['Absent'] ?? 0,
-            'late'          => $stats['Late'] ?? 0,
-            'half_day'      => $stats['Half Day'] ?? 0,
+            'marked'         => $markedCount,
+            'not_marked'     => max(0, $totalStudents - $markedCount),
+            'present'        => $stats['Present'] ?? 0,
+            'absent'         => $stats['Absent'] ?? 0,
+            'late'           => $stats['Late'] ?? 0,
+            'half_day'       => $stats['Half Day'] ?? 0,
         ]);
     }
 
@@ -129,12 +130,12 @@ class AttendanceController extends Controller
     {
         $request->validate([
             'class_id' => 'nullable',
-            'month'    => 'required|integer',
-            'year'     => 'required|integer',
+            'month'    => 'nullable|integer',
+            'year'     => 'nullable|integer',
         ]);
 
-        $month = (int)$request->month;
-        $year  = (int)$request->year;
+        $month = (int) ($request->month ?? now()->month);
+        $year  = (int) ($request->year ?? now()->year);
 
         // If specific class requested
         if ($request->filled('class_id') && $request->class_id !== 'all') {

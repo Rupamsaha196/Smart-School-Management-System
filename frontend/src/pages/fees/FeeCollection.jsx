@@ -63,7 +63,10 @@ export default function FeeCollection() {
     }
   };
 
-  const handleCollectAndPrint = async () => {
+  const [thermalData, setThermalData] = useState(null);
+  const [showThermalModal, setShowThermalModal] = useState(false);
+
+  const handleCollectAndPrint = async (format = 'pdf') => {
     if (!payingAmount || payingAmount <= 0) {
       toast.error('Please enter a valid payment amount');
       return;
@@ -71,6 +74,7 @@ export default function FeeCollection() {
 
     setCollecting(true);
     let receiptNo = `RCP${new Date().getFullYear()}${Math.floor(10000 + Math.random() * 90000)}`;
+    let createdFeeId = null;
 
     try {
       const res = await api.post('/fees/collect', {
@@ -84,6 +88,9 @@ export default function FeeCollection() {
 
       if (res.data?.receipt) {
         receiptNo = res.data.receipt;
+      }
+      if (res.data?.fee?.id) {
+        createdFeeId = res.data.fee.id;
       }
 
       toast.success(`Payment of ₹${payingAmount.toLocaleString()} collected! Automatically added to Income.`);
@@ -101,55 +108,84 @@ export default function FeeCollection() {
       } catch (e) {}
       toast.success(`Payment of ₹${payingAmount.toLocaleString()} collected! Logged to Income.`);
     } finally {
-      // Generate formal PDF receipt
-      try {
-        const doc = new jsPDF();
-        
-        // Header
-        doc.setFillColor(99, 102, 241);
-        doc.rect(0, 0, 210, 26, 'F');
-        doc.setTextColor(255, 255, 255);
-        doc.setFontSize(20);
-        doc.setFont('helvetica', 'bold');
-        doc.text("SMART SCHOOL", 105, 12, null, null, "center");
-        doc.setFontSize(10);
-        doc.setFont('helvetica', 'normal');
-        doc.text("OFFICIAL FEE RECEIPT (STUDENT COPY)", 105, 20, null, null, "center");
-        
-        doc.setTextColor(30, 41, 59);
-        doc.setFontSize(10);
-        doc.text(`Receipt No: ${receiptNo}`, 20, 36);
-        doc.text(`Payment Date: ${new Date().toLocaleDateString()}`, 145, 36);
-
-        autoTable(doc, {
-          startY: 42,
-          theme: 'grid',
-          headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold' },
-          body: [
-            ['Student Name:', student.name],
-            ['Admission No:', student.admission_no],
-            ['Class & Section:', student.class],
-            ['Fee Type:', feeType],
-            ['Fee Period / Month:', feeMonth],
-            ['Payment Mode:', paymentMode],
-            ['Amount Paid:', `Rs. ${Number(payingAmount).toLocaleString()}/-`],
-            ['Status:', 'PAID IN FULL (Logged to School Income)'],
-          ],
-          styles: { fontSize: 10, cellPadding: 5 },
-          columnStyles: {
-            0: { fontStyle: 'bold', cellWidth: 60, fillColor: [248, 250, 252] },
-            1: { cellWidth: 120 },
+      if (format === 'thermal') {
+        // Fetch or create thermal POS payload (Module 31)
+        try {
+          if (createdFeeId) {
+            const { data } = await api.get(`/fees/${createdFeeId}/thermal-receipt`);
+            setThermalData(data);
+          } else {
+            throw new Error('Fallback thermal generation');
           }
-        });
+        } catch (e) {
+          setThermalData({
+            receipt_no: receiptNo,
+            school_name: 'SMART SCHOOL INTERNATIONAL',
+            address: 'Institutional Area, Sector 15',
+            phone: '+91 98765 43210',
+            thermal_width: '80mm',
+            date: new Date().toLocaleString(),
+            student_name: student.name,
+            admission_no: student.admission_no,
+            class: student.class,
+            fee_type: feeType,
+            amount_paid: Number(payingAmount),
+            payment_mode: paymentMode,
+            status: 'PAID',
+          });
+        }
+        setShowThermalModal(true);
+      } else {
+        // Generate formal A4 PDF receipt
+        try {
+          const doc = new jsPDF();
+          
+          // Header
+          doc.setFillColor(99, 102, 241);
+          doc.rect(0, 0, 210, 26, 'F');
+          doc.setTextColor(255, 255, 255);
+          doc.setFontSize(20);
+          doc.setFont('helvetica', 'bold');
+          doc.text("SMART SCHOOL", 105, 12, null, null, "center");
+          doc.setFontSize(10);
+          doc.setFont('helvetica', 'normal');
+          doc.text("OFFICIAL FEE RECEIPT (STUDENT COPY)", 105, 20, null, null, "center");
+          
+          doc.setTextColor(30, 41, 59);
+          doc.setFontSize(10);
+          doc.text(`Receipt No: ${receiptNo}`, 20, 36);
+          doc.text(`Payment Date: ${new Date().toLocaleDateString()}`, 145, 36);
 
-        const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 120;
-        doc.setFontSize(10);
-        doc.text("Thank you for your timely payment.", 20, finalY + 25);
-        doc.text("Authorized Accountant Seal & Signature", 125, finalY + 25);
+          autoTable(doc, {
+            startY: 42,
+            theme: 'grid',
+            headStyles: { fillColor: [99, 102, 241], textColor: [255, 255, 255], fontStyle: 'bold' },
+            body: [
+              ['Student Name:', student.name],
+              ['Admission No:', student.admission_no],
+              ['Class & Section:', student.class],
+              ['Fee Type:', feeType],
+              ['Fee Period / Month:', feeMonth],
+              ['Payment Mode:', paymentMode],
+              ['Amount Paid:', `Rs. ${Number(payingAmount).toLocaleString()}/-`],
+              ['Status:', 'PAID IN FULL (Logged to School Income)'],
+            ],
+            styles: { fontSize: 10, cellPadding: 5 },
+            columnStyles: {
+              0: { fontStyle: 'bold', cellWidth: 60, fillColor: [248, 250, 252] },
+              1: { cellWidth: 120 },
+            }
+          });
 
-        doc.save(`Fee_Receipt_${student.admission_no}.pdf`);
-      } catch (pdfErr) {
-        console.error('PDF Receipt Error:', pdfErr);
+          const finalY = doc.lastAutoTable ? doc.lastAutoTable.finalY : 120;
+          doc.setFontSize(10);
+          doc.text("Thank you for your timely payment.", 20, finalY + 25);
+          doc.text("Authorized Accountant Seal & Signature", 125, finalY + 25);
+
+          doc.save(`Fee_Receipt_${student.admission_no}.pdf`);
+        } catch (pdfErr) {
+          console.error('PDF Receipt Error:', pdfErr);
+        }
       }
 
       setCollecting(false);
@@ -233,18 +269,126 @@ export default function FeeCollection() {
                 required
               />
             </div>
-            <button 
-              className="btn btn-success w-full mt-4" 
-              onClick={handleCollectAndPrint}
-              disabled={collecting}
-              style={{ height: '46px', fontSize: '1rem' }}
-            >
-              <HiOutlineBanknotes size={20} />
-              {collecting ? 'Processing & Syncing to Income...' : 'Collect Fees & Print Receipt'}
-            </button>
+            <div className="flex gap-2 mt-4">
+              <button 
+                className="btn btn-success flex-1" 
+                onClick={() => handleCollectAndPrint('pdf')}
+                disabled={collecting}
+                style={{ height: '46px', fontSize: '0.95rem' }}
+              >
+                <HiOutlineBanknotes size={18} />
+                {collecting ? 'Processing...' : 'Collect & A4 PDF'}
+              </button>
+              <button 
+                className="btn btn-primary flex-1" 
+                onClick={() => handleCollectAndPrint('thermal')}
+                disabled={collecting}
+                style={{ height: '46px', fontSize: '0.95rem' }}
+              >
+                <HiOutlineDocumentArrowDown size={18} />
+                {collecting ? 'Processing...' : 'Collect & 80mm Thermal'}
+              </button>
+            </div>
             <p className="text-xs text-secondary text-center mt-2">
               ⚡ This payment will automatically be logged into the School Income Register.
             </p>
+          </div>
+        </div>
+      )}
+
+      {/* POS Thermal Receipt Modal (Module 31) */}
+      {showThermalModal && thermalData && (
+        <div className="modal-backdrop" style={{ position: 'fixed', inset: 0, backgroundColor: 'rgba(15, 23, 42, 0.75)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000, padding: '20px' }}>
+          <div className="card animate-scaleUp" style={{ width: '100%', maxWidth: '420px', maxHeight: '90vh', overflowY: 'auto', background: '#ffffff', color: '#000000', padding: '24px' }}>
+            <div className="flex justify-between items-center mb-4 pb-2 border-b">
+              <h3 className="text-sm font-bold text-gray-800">80mm POS Thermal Slip Preview</h3>
+              <button className="btn btn-ghost" onClick={() => setShowThermalModal(false)}>✕</button>
+            </div>
+
+            {/* Thermal Printable Area (80mm width standard) */}
+            <div id="thermal-print-area" style={{ width: '100%', maxWidth: '300px', margin: '0 auto', fontFamily: '"Courier New", Courier, monospace', fontSize: '12px', lineHeight: 1.4, color: '#000' }}>
+              <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+                <div style={{ fontSize: '15px', fontWeight: 'bold' }}>{thermalData.school_name || 'SMART SCHOOL'}</div>
+                <div style={{ fontSize: '10px' }}>{thermalData.address || 'Institutional Area, Sector 15'}</div>
+                <div style={{ fontSize: '10px' }}>Phone: {thermalData.phone || '+91 98765 43210'}</div>
+                <div style={{ margin: '6px 0', borderBottom: '1px dashed #000' }}></div>
+                <div style={{ fontSize: '13px', fontWeight: 'bold' }}>FEE PAYMENT RECEIPT</div>
+                <div style={{ fontSize: '10px' }}>(STUDENT COPY)</div>
+              </div>
+
+              <div style={{ margin: '6px 0', borderBottom: '1px dashed #000' }}></div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Receipt:</span>
+                <span style={{ fontWeight: 'bold' }}>{thermalData.receipt_no}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Date:</span>
+                <span>{thermalData.date}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Adm No:</span>
+                <span style={{ fontWeight: 'bold' }}>{thermalData.admission_no}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>Student:</span>
+                <span>{thermalData.student_name}</span>
+              </div>
+              {thermalData.class && (
+                <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <span>Class:</span>
+                  <span>{thermalData.class}</span>
+                </div>
+              )}
+
+              <div style={{ margin: '6px 0', borderBottom: '1px dashed #000' }}></div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+                <span>PARTICULAR</span>
+                <span>AMOUNT</span>
+              </div>
+              <div style={{ margin: '4px 0', borderBottom: '1px dotted #000' }}></div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{thermalData.fee_type || 'Tuition Fee'}</span>
+                <span>Rs. {Number(thermalData.amount_paid).toFixed(2)}</span>
+              </div>
+
+              <div style={{ margin: '6px 0', borderBottom: '1px dashed #000' }}></div>
+
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold' }}>
+                <span>TOTAL PAID:</span>
+                <span>Rs. {Number(thermalData.amount_paid).toFixed(2)}</span>
+              </div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', marginTop: '2px' }}>
+                <span>Mode: {thermalData.payment_mode || 'Cash'}</span>
+                <span>Status: {thermalData.status || 'PAID'}</span>
+              </div>
+
+              <div style={{ margin: '8px 0', borderBottom: '1px dashed #000' }}></div>
+
+              <div style={{ textAlign: 'center', fontSize: '10px', marginTop: '8px' }}>
+                <div>Thank you for your payment!</div>
+                <div>Keep this slip for your record.</div>
+                <div style={{ marginTop: '6px', letterSpacing: '4px', fontSize: '14px', fontWeight: 'bold' }}>* * * * *</div>
+                <div style={{ fontSize: '9px', color: '#444' }}>80mm POS Thermal Engine Active</div>
+              </div>
+            </div>
+
+            <div className="flex gap-2 mt-6">
+              <button 
+                className="btn btn-primary w-full" 
+                onClick={() => window.print()}
+              >
+                <HiOutlineDocumentArrowDown size={16} /> Print Thermal Slip
+              </button>
+              <button 
+                className="btn btn-ghost" 
+                onClick={() => setShowThermalModal(false)}
+              >
+                Close
+              </button>
+            </div>
           </div>
         </div>
       )}

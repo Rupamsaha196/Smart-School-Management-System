@@ -10,4 +10,9 @@ class ExamResult extends Model
     use HasFactory;
     
     protected $fillable = ['student_id', 'exam', 'subject', 'marks', 'total', 'grade'];
+
+    public function student()
+    {
+        return $this->belongsTo(Student::class);
+    }
 }
