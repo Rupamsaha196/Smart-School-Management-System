@@ -22,4 +22,18 @@ class SchoolClass extends Model
     {
         return $this->hasMany(Timetable::class, 'class_id');
     }
+
+    public function getSectionsArrayAttribute()
+    {
+        if (empty($this->sections)) return [];
+        // If it's stored as JSON, json_decode it.
+        $decoded = json_decode($this->sections, true);
+        if (is_array($decoded)) {
+            return $decoded;
+        }
+        // Otherwise, split by comma
+        return array_map('trim', explode(',', $this->sections));
+    }
+
+    protected $appends = ['sections_array'];
 }

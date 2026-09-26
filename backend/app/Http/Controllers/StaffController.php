@@ -33,13 +33,15 @@ class StaffController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name'    => 'required|string',
-            'role'    => 'required|string',
-            'email'   => 'nullable|email',
-            'emp_id'  => 'nullable|string',
+            'name'       => 'required|string',
+            'role'       => 'required|string',
+            'department' => 'nullable|string',
+            'email'      => 'nullable|email',
+            'emp_id'     => 'nullable|string',
         ]);
 
         $data = $request->all();
+        $data['department'] = $data['department'] ?? 'General';
 
         if (empty($data['emp_id'])) {
             $max = (Staff::max('id') ?? 0) + 1;

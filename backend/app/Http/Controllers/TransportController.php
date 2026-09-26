@@ -59,6 +59,21 @@ class TransportController extends Controller
         return response()->json(DB::table('transport_stops')->find($id), 201);
     }
 
+    public function updateStop(Request $request, int $routeId, int $stopId)
+    {
+        $request->validate(['stop_name' => 'required|string']);
+        $data = $request->only(['stop_name', 'distance_from_school', 'pickup_time', 'drop_time', 'order']);
+        $data['updated_at'] = now();
+        DB::table('transport_stops')->where('id', $stopId)->where('route_id', $routeId)->update($data);
+        return response()->json(DB::table('transport_stops')->find($stopId));
+    }
+
+    public function destroyStop(int $routeId, int $stopId)
+    {
+        DB::table('transport_stops')->where('id', $stopId)->where('route_id', $routeId)->delete();
+        return response()->json(null, 204);
+    }
+
     // ── Student Transport Assignment ────────────────────────────────────
 
     public function assignStudent(Request $request)

@@ -76,6 +76,17 @@ class FeeController extends Controller
             'collected_by'   => $request->user()?->id,
         ]);
 
+        // Auto-add income transaction
+        DB::table('transactions')->insert([
+            'type'        => 'Income',
+            'head'        => $fee->type,
+            'amount'      => $request->paid,
+            'date'        => now()->toDateString(),
+            'description' => 'Fee collection for ' . ($fee->student->first_name ?? 'Student'),
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+
         return response()->json($fee->fresh()->load('student'));
     }
 

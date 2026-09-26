@@ -120,4 +120,53 @@ class AttendanceController extends Controller
             'half_day'      => $stats['Half Day'] ?? 0,
         ]);
     }
+
+    /**
+     * Generate an attendance report (e.g. monthly for a class).
+     * GET /attendance/report?month=9&year=2026&class_id=8
+     */
+    public function report(Request $request)
+    {
+        $request->validate([
+            'class_id' => 'required',
+            'month'    => 'required|integer',
+            'year'     => 'required|integer',
+        ]);
+
+        $students = Student::where('class_id', $request->class_id)
+            ->when($request->section_id, fn($q) => $q->where('section_id', $request->section_id))
+            ->get();
+
+        $attendances = Attendance::where('class_id', $request->class_id)
+            ->whereMonth('date', $request->month)
+            ->whereYear('date', $request->year)
+            ->get()
+            ->groupBy('student_id');
+
+        $report = [];
+        foreach ($students as $student) {
+            $studentAtt = $attendances->get($student->id, collect());
+            $present = $studentAtt->where('status', 'Present')->count();
+            $absent  = $studentAtt->where('status', 'Absent')->count();
+            $total   = $studentAtt->count();
+
+            $report[] = [
+                'student_id'   => $student->id,
+                'name'         => $student->name,
+                'admission_no' => $student->admission_no,
+                'present'      => $present,
+                'absent'       => $absent,
+                'total_marked' => $total,
+                'percentage'   => $total > 0 ? round(($present / $total) * 100, 2) : 0,
+                'daily_records'=> $studentAtt->keyBy('date')->map(fn($a) => $a->status),
+            ];
+        }
+
+        return response()->json([
+            'class_id' => $request->class_id,
+            'month'    => $request->month,
+            'year'     => $request->year,
+            'report'   => collect($report)->sortByDesc('percentage')->values()->all(),
+        ]);
+    }
 }

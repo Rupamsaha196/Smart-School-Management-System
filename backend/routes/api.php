@@ -100,7 +100,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/{student}/documents', [StudentController::class, 'uploadDocument']);
 
         // Notes
+        Route::get('/{student}/notes/{noteId}', [StudentController::class, 'getNote']);
         Route::post('/{student}/notes', [StudentController::class, 'addNote']);
+        Route::put('/{student}/notes/{noteId}', [StudentController::class, 'updateNote']);
+        Route::delete('/{student}/notes/{noteId}', [StudentController::class, 'deleteNote']);
+
+        // TC Download
+        Route::get('/{student}/tc', [StudentController::class, 'downloadTc']);
 
         // Siblings
         Route::post('/{student}/siblings', [StudentController::class, 'addSibling']);
@@ -168,8 +174,9 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/subjects/{subject}', [AcademicsController::class, 'updateSubject']);
         Route::delete('/subjects/{subject}', [AcademicsController::class, 'destroySubject']);
 
-        // Student Promotion
+        // Student Promotion & Allocation
         Route::post('/promote', [AcademicsController::class, 'promoteStudents']);
+        Route::post('/allocate', [AcademicsController::class, 'allocateStudents']);
     });
 
     // ── Timetable ─────────────────────────────────────────────────────
@@ -192,6 +199,8 @@ Route::middleware('auth:sanctum')->group(function () {
         // Schedules
         Route::get('/{exam}/schedules', [ExamController::class, 'schedules']);
         Route::post('/{exam}/schedules', [ExamController::class, 'addSchedule']);
+        Route::put('/{exam}/schedules/{schedule}', [ExamController::class, 'updateSchedule']);
+        Route::delete('/{exam}/schedules/{schedule}', [ExamController::class, 'destroySchedule']);
 
         // Marks
         Route::get('/{exam}/marks', [ExamController::class, 'marks']);
@@ -242,6 +251,8 @@ Route::middleware('auth:sanctum')->group(function () {
 
         Route::get('/routes/{routeId}/stops', [TransportController::class, 'stops']);
         Route::post('/routes/{routeId}/stops', [TransportController::class, 'storeStop']);
+        Route::put('/routes/{routeId}/stops/{stopId}', [TransportController::class, 'updateStop']);
+        Route::delete('/routes/{routeId}/stops/{stopId}', [TransportController::class, 'destroyStop']);
         Route::get('/routes/{routeId}/students', [TransportController::class, 'routeStudents']);
 
         Route::post('/assign', [TransportController::class, 'assignStudent']);

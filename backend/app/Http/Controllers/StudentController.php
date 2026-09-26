@@ -57,12 +57,26 @@ class StudentController extends Controller
 
         // Log timeline event
         $student->timelines()->create([
-            'event'      => 'Admission',
+            'event'       => 'Admission',
             'description' => 'Student admitted to ' . ($student->class_name ?? 'school'),
-            'event_date' => $student->admission_date ?? now(),
+            'event_date'  => $student->admission_date ?? now(),
         ]);
 
-        return response()->json($student, 201);
+        // Process uploaded documents during admission if any
+        if ($request->hasFile('documents')) {
+            foreach ($request->file('documents') as $key => $file) {
+                // If the frontend sends an array of files, we upload them
+                $path = $file->store("student_documents/{$student->id}", 'public');
+                $student->documents()->create([
+                    // Just use the key or a default type if it's an array
+                    'document_type' => is_string($key) ? $key : 'General',
+                    'file_path'     => $path,
+                    'original_name' => $file->getClientOriginalName(),
+                ]);
+            }
+        }
+
+        return response()->json($student->load('documents'), 201);
     }
 
     /**
@@ -132,6 +146,64 @@ class StudentController extends Controller
         ]);
 
         return response()->json($note->load('addedBy'), 201);
+    }
+
+    /**
+     * Get a specific note.
+     */
+    public function getNote(Student $student, $noteId)
+    {
+        $note = $student->notes()->with('addedBy')->findOrFail($noteId);
+        return response()->json($note);
+    }
+
+    /**
+     * Update a specific note.
+     */
+    public function updateNote(Request $request, Student $student, $noteId)
+    {
+        $request->validate(['note' => 'required|string', 'type' => 'nullable|string']);
+        $note = $student->notes()->findOrFail($noteId);
+        $note->update($request->only('note', 'type'));
+        return response()->json($note->load('addedBy'));
+    }
+
+    /**
+     * Delete a specific note.
+     */
+    public function deleteNote(Student $student, $noteId)
+    {
+        $note = $student->notes()->findOrFail($noteId);
+        $note->delete();
+        return response()->json(null, 204);
+    }
+
+    /**
+     * Generate Transfer Certificate (TC) details.
+     */
+    public function downloadTc(Student $student)
+    {
+        $student->load(['fees', 'examResults', 'attendances']);
+        
+        $tcData = [
+            'school_name' => config('app.name', 'Smart School'),
+            'student_name' => $student->name,
+            'admission_no' => $student->admission_no,
+            'dob' => $student->dob ? $student->dob->format('Y-m-d') : null,
+            'father_name' => $student->father_name,
+            'mother_name' => $student->mother_name,
+            'leaving_date' => now()->format('Y-m-d'),
+            'reason_for_leaving' => 'Parents request',
+            'conduct' => 'Good',
+            'class_left' => $student->class_id,
+            'attendance_summary' => $student->attendances->count() > 0 ? 'Regular' : 'N/A',
+            'fees_paid' => $student->fees->where('status', 'Pending')->count() == 0 ? 'Yes' : 'No (Pending Dues)',
+        ];
+
+        return response()->json([
+            'message' => 'TC Generated',
+            'tc_data' => $tcData
+        ]);
     }
 
     /**

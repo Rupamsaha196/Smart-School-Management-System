@@ -138,4 +138,25 @@ class AcademicsController extends Controller
 
         return response()->json(['message' => "$count students processed for promotion."]);
     }
+
+    /**
+     * Bulk allocate students to a class and section.
+     * POST /academics/allocate
+     */
+    public function allocateStudents(Request $request)
+    {
+        $request->validate([
+            'student_ids'   => 'required|array',
+            'student_ids.*' => 'exists:students,id',
+            'class_id'      => 'required|string',
+            'section_id'    => 'nullable|string',
+        ]);
+
+        $count = Student::whereIn('id', $request->student_ids)->update([
+            'class_id'   => $request->class_id,
+            'section_id' => $request->section_id,
+        ]);
+
+        return response()->json(['message' => "$count students allocated successfully."]);
+    }
 }

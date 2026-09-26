@@ -68,6 +68,20 @@ class ExamController extends Controller
         return response()->json($schedule->load('subject', 'schoolClass'), 201);
     }
 
+    public function updateSchedule(Request $request, Exam $exam, $scheduleId)
+    {
+        $schedule = $exam->schedules()->findOrFail($scheduleId);
+        $schedule->update($request->all());
+        return response()->json($schedule->load('subject', 'schoolClass'));
+    }
+
+    public function destroySchedule(Exam $exam, $scheduleId)
+    {
+        $schedule = $exam->schedules()->findOrFail($scheduleId);
+        $schedule->delete();
+        return response()->json(null, 204);
+    }
+
     // ── Marks Entry ────────────────────────────────────────────────────
 
     /**
