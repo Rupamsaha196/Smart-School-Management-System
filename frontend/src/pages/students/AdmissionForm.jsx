@@ -1,8 +1,8 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import api from '../../api/axiosInstance';
-import { HiOutlineArrowLeft, HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineCloudArrowUp } from 'react-icons/hi2';
+import { HiOutlineArrowLeft, HiOutlineArrowRight, HiOutlineCheckCircle, HiOutlineCloudArrowUp, HiOutlineDocumentText, HiOutlineTrash } from 'react-icons/hi2';
 
 const steps = ['Personal Info', 'Contact Details', 'Parent/Guardian', 'Documents'];
 
@@ -13,6 +13,7 @@ export default function AdmissionForm() {
 
   const [currentStep, setCurrentStep] = useState(0);
   const [submitting, setSubmitting] = useState(false);
+  const [uploadedDocs, setUploadedDocs] = useState({});
   const [formData, setFormData] = useState(() => {
     if (isEdit && state?.student) {
       return { ...state.student };
@@ -33,6 +34,25 @@ export default function AdmissionForm() {
     documents: [],
     };
   });
+
+  const handleFileSelect = (docType, file) => {
+    if (!file) return;
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error('File size must be under 5MB');
+      return;
+    }
+    setUploadedDocs(prev => ({ ...prev, [docType]: file }));
+    toast.success(`${docType} attached!`);
+  };
+
+  const handleRemoveDoc = (docType, e) => {
+    e.stopPropagation();
+    setUploadedDocs(prev => {
+      const updated = { ...prev };
+      delete updated[docType];
+      return updated;
+    });
+  };
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -69,7 +89,28 @@ export default function AdmissionForm() {
         return;
       }
 
-      const response = await api.post('/students', formData);
+      let response;
+      const hasFiles = Object.keys(uploadedDocs).length > 0;
+
+      if (hasFiles) {
+        const payload = new FormData();
+        Object.entries(formData).forEach(([k, v]) => {
+          if (v !== null && v !== undefined && k !== 'documents') {
+            payload.append(k, v);
+          }
+        });
+        Object.entries(uploadedDocs).forEach(([docType, file]) => {
+          if (file) {
+            payload.append(`documents[${docType}]`, file);
+          }
+        });
+        response = await api.post('/students', payload, {
+          headers: { 'Content-Type': 'multipart/form-data' }
+        });
+      } else {
+        response = await api.post('/students', formData);
+      }
+
       const newStudent = response.data;
       
       // Update local storage so the new student appears immediately everywhere
@@ -343,28 +384,84 @@ export default function AdmissionForm() {
             <div className="animate-fadeIn">
               <h3 className="text-h4 mb-6" style={{ color: 'var(--primary-400)' }}>Upload Documents</h3>
               <div className="form-row">
-                {['Birth Certificate', 'Transfer Certificate', 'Report Card', 'Aadhaar Card', 'Passport Photo'].map((doc) => (
-                  <div className="form-group" key={doc}>
-                    <label className="form-label">{doc}</label>
-                    <div style={{
-                      border: '2px dashed var(--border-primary)',
-                      borderRadius: 'var(--radius-md)',
-                      padding: '24px',
-                      textAlign: 'center',
-                      cursor: 'pointer',
-                      transition: 'all var(--transition-fast)',
-                      background: 'var(--bg-input)',
-                    }}
-                    onMouseEnter={(e) => { e.currentTarget.style.borderColor = 'var(--primary-500)'; e.currentTarget.style.background = 'rgba(99,102,241,0.04)'; }}
-                    onMouseLeave={(e) => { e.currentTarget.style.borderColor = 'var(--border-primary)'; e.currentTarget.style.background = 'var(--bg-input)'; }}
-                    >
-                      <HiOutlineCloudArrowUp size={28} style={{ color: 'var(--text-tertiary)', margin: '0 auto 8px' }} />
-                      <p className="text-sm text-secondary">Click to upload or drag & drop</p>
-                      <p className="text-xs text-tertiary">PDF, JPG, PNG (max 5MB)</p>
-                      <input type="file" style={{ display: 'none' }} />
+                {['Birth Certificate', 'Transfer Certificate', 'Report Card', 'Aadhaar Card', 'Passport Photo'].map((doc) => {
+                  const file = uploadedDocs[doc];
+                  const inputId = `file-input-${doc.replace(/\s+/g, '-').toLowerCase()}`;
+                  return (
+                    <div className="form-group" key={doc} style={{ minWidth: '220px' }}>
+                      <label className="form-label">{doc}</label>
+                      <input
+                        id={inputId}
+                        type="file"
+                        accept=".pdf,.jpg,.jpeg,.png"
+                        style={{ display: 'none' }}
+                        onChange={(e) => {
+                          if (e.target.files && e.target.files[0]) {
+                            handleFileSelect(doc, e.target.files[0]);
+                          }
+                        }}
+                      />
+                      <div
+                        style={{
+                          border: file ? '2px solid var(--success-500)' : '2px dashed var(--border-primary)',
+                          borderRadius: 'var(--radius-md)',
+                          padding: '20px 16px',
+                          textAlign: 'center',
+                          cursor: 'pointer',
+                          transition: 'all var(--transition-fast)',
+                          background: file ? 'rgba(16,185,129,0.06)' : 'var(--bg-input)',
+                        }}
+                        onClick={() => document.getElementById(inputId)?.click()}
+                        onDragOver={(e) => { e.preventDefault(); e.stopPropagation(); }}
+                        onDrop={(e) => {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                            handleFileSelect(doc, e.dataTransfer.files[0]);
+                          }
+                        }}
+                        onMouseEnter={(e) => {
+                          if (!file) {
+                            e.currentTarget.style.borderColor = 'var(--primary-500)';
+                            e.currentTarget.style.background = 'rgba(99,102,241,0.04)';
+                          }
+                        }}
+                        onMouseLeave={(e) => {
+                          if (!file) {
+                            e.currentTarget.style.borderColor = 'var(--border-primary)';
+                            e.currentTarget.style.background = 'var(--bg-input)';
+                          }
+                        }}
+                      >
+                        {file ? (
+                          <div>
+                            <HiOutlineDocumentText size={32} style={{ color: 'var(--success-400)', margin: '0 auto 6px' }} />
+                            <p className="text-sm font-semibold" style={{ color: 'var(--success-400)', wordBreak: 'break-all' }}>
+                              {file.name}
+                            </p>
+                            <p className="text-xs text-secondary mt-1">
+                              {(file.size / 1024).toFixed(1)} KB • Ready
+                            </p>
+                            <button
+                              type="button"
+                              className="btn btn-sm btn-ghost mt-2"
+                              style={{ color: 'var(--danger-400)', fontSize: '0.75rem', padding: '2px 8px' }}
+                              onClick={(e) => handleRemoveDoc(doc, e)}
+                            >
+                              <HiOutlineTrash size={14} style={{ display: 'inline', marginRight: 4 }} /> Remove
+                            </button>
+                          </div>
+                        ) : (
+                          <div>
+                            <HiOutlineCloudArrowUp size={28} style={{ color: 'var(--text-tertiary)', margin: '0 auto 8px' }} />
+                            <p className="text-sm text-secondary font-medium">Click to upload or drag & drop</p>
+                            <p className="text-xs text-tertiary mt-1">PDF, JPG, PNG (max 5MB)</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

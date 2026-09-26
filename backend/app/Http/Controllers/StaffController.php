@@ -44,8 +44,12 @@ class StaffController extends Controller
         $data['department'] = $data['department'] ?? 'General';
 
         if (empty($data['emp_id'])) {
-            $max = (Staff::max('id') ?? 0) + 1;
-            $data['emp_id'] = 'EMP' . str_pad($max, 4, '0', STR_PAD_LEFT);
+            $num = (Staff::max('id') ?? 0) + 1;
+            do {
+                $candidate = 'EMP' . str_pad($num, 3, '0', STR_PAD_LEFT);
+                $num++;
+            } while (Staff::where('emp_id', $candidate)->exists());
+            $data['emp_id'] = $candidate;
         }
 
         $data['status'] = $data['status'] ?? 'Active';
@@ -63,7 +67,11 @@ class StaffController extends Controller
 
     public function update(Request $request, Staff $staff)
     {
-        $staff->update($request->all());
+        $data = $request->except(['id']);
+        if (empty($data['emp_id'])) {
+            unset($data['emp_id']);
+        }
+        $staff->update($data);
         return response()->json($staff->fresh());
     }
 
@@ -86,6 +94,9 @@ class StaffController extends Controller
 
     public function markAttendance(Request $request)
     {
+        $status = $request->status === 'Half-Day' ? 'Half Day' : $request->status;
+        $request->merge(['status' => $status]);
+
         $request->validate([
             'staff_id'  => 'required|exists:staff,id',
             'date'      => 'required|date',
@@ -100,6 +111,40 @@ class StaffController extends Controller
         );
 
         return response()->json($record);
+    }
+
+    public function bulkMarkAttendance(Request $request)
+    {
+        $request->validate([
+            'date'      => 'required|date',
+            'records'   => 'required|array',
+            'records.*.staff_id' => 'required|exists:staff,id',
+            'records.*.status'   => 'required|string',
+        ]);
+
+        $date = $request->date;
+        $count = 0;
+
+        foreach ($request->records as $item) {
+            $rawStatus = $item['status'] ?? 'Present';
+            $status = ($rawStatus === 'Half-Day') ? 'Half Day' : $rawStatus;
+            if (!in_array($status, ['Present', 'Absent', 'Late', 'Half Day', 'Holiday', 'Leave'])) {
+                $status = 'Present';
+            }
+
+            StaffAttendance::updateOrCreate(
+                ['staff_id' => $item['staff_id'], 'date' => $date],
+                [
+                    'status'   => $status,
+                    'remark'   => $item['remark'] ?? null,
+                    'time_in'  => $item['time_in'] ?? null,
+                    'time_out' => $item['time_out'] ?? null,
+                ]
+            );
+            $count++;
+        }
+
+        return response()->json(['message' => "$count staff attendance records saved successfully."]);
     }
 
     // ── Payroll ─────────────────────────────────────────────────────────

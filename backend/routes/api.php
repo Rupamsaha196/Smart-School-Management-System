@@ -9,6 +9,7 @@ use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\ExamController;
 use App\Http\Controllers\FeeController;
 use App\Http\Controllers\HomeworkController;
+use App\Http\Controllers\HostelController;
 use App\Http\Controllers\LeaveController;
 use App\Http\Controllers\LibraryController;
 use App\Http\Controllers\NoticeController;
@@ -116,6 +117,12 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('staff')->group(function () {
         Route::get('/', [StaffController::class, 'index']);
         Route::post('/', [StaffController::class, 'store']);
+
+        // Staff Attendance (registered BEFORE /{staff})
+        Route::get('/attendance', [StaffController::class, 'attendance']);
+        Route::post('/attendance', [StaffController::class, 'markAttendance']);
+        Route::post('/attendance/bulk', [StaffController::class, 'bulkMarkAttendance']);
+
         Route::get('/{staff}', [StaffController::class, 'show']);
         Route::put('/{staff}', [StaffController::class, 'update']);
         Route::delete('/{staff}', [StaffController::class, 'destroy']);
@@ -135,10 +142,12 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/bulk', [AttendanceController::class, 'bulkMark']);
         Route::get('/daily-stats', [AttendanceController::class, 'dailyStats']);
         Route::get('/student/{student}', [AttendanceController::class, 'studentSummary']);
+        Route::get('/report', [AttendanceController::class, 'report']);
 
         // Staff Attendance
         Route::get('/staff', [StaffController::class, 'attendance']);
         Route::post('/staff', [StaffController::class, 'markAttendance']);
+        Route::post('/staff/bulk', [StaffController::class, 'bulkMarkAttendance']);
     });
 
     // ── QR / Biometric Attendance ─────────────────────────────────────
@@ -212,6 +221,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::prefix('fees')->group(function () {
         Route::get('/', [FeeController::class, 'index']);
         Route::post('/', [FeeController::class, 'store']);
+        Route::post('/collect', [FeeController::class, 'collect']);
         Route::get('/summary', [FeeController::class, 'summary']);
         Route::get('/defaulters', [FeeController::class, 'defaulters']);
         Route::get('/{fee}', [FeeController::class, 'show']);
@@ -219,6 +229,13 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::delete('/{fee}', [FeeController::class, 'destroy']);
         Route::post('/{fee}/pay', [FeeController::class, 'pay']);
     });
+
+    // ── Classes Top-Level Aliases ─────────────────────────────────────
+    Route::get('/classes', [AcademicsController::class, 'classes']);
+    Route::post('/classes', [AcademicsController::class, 'storeClass']);
+    Route::put('/classes/{class}', [AcademicsController::class, 'updateClass']);
+    Route::delete('/classes/{class}', [AcademicsController::class, 'destroyClass']);
+    Route::post('/classes/allocate', [AcademicsController::class, 'allocateStudents']);
 
     // ── Income/Expense (Transactions) ─────────────────────────────────
     Route::apiResource('transactions', \App\Http\Controllers\GenericResourceController::class);
@@ -259,11 +276,17 @@ Route::middleware('auth:sanctum')->group(function () {
     });
 
     // ── Hostel ───────────────────────────────────────────────────────
-    Route::get('/hostels', [\App\Http\Controllers\GenericResourceController::class, 'index']);
-    Route::post('/hostels', [\App\Http\Controllers\GenericResourceController::class, 'store']);
-    Route::get('/hostels/{id}', [\App\Http\Controllers\GenericResourceController::class, 'show']);
-    Route::put('/hostels/{id}', [\App\Http\Controllers\GenericResourceController::class, 'update']);
-    Route::delete('/hostels/{id}', [\App\Http\Controllers\GenericResourceController::class, 'destroy']);
+    Route::prefix('hostels')->group(function () {
+        Route::get('/', [HostelController::class, 'index']);
+        Route::post('/', [HostelController::class, 'store']);
+        Route::get('/rooms', [HostelController::class, 'rooms']);
+        Route::post('/rooms', [HostelController::class, 'storeRoom']);
+        Route::post('/allocate', [HostelController::class, 'allocateStudent']);
+        Route::get('/{hostelId}/students', [HostelController::class, 'hostelStudents']);
+        Route::get('/{id}', [HostelController::class, 'show']);
+        Route::put('/{id}', [HostelController::class, 'update']);
+        Route::delete('/{id}', [HostelController::class, 'destroy']);
+    });
 
     // ── Homework ──────────────────────────────────────────────────────
     Route::apiResource('homework', HomeworkController::class);

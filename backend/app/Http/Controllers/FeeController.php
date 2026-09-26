@@ -49,7 +49,89 @@ class FeeController extends Controller
         }
 
         $fee = StudentFee::create($data);
+
+        if ($fee->paid > 0) {
+            $student = Student::find($fee->student_id);
+            $studentName = $student ? "{$student->first_name} {$student->last_name}" : 'Student';
+            $admNo = $student ? $student->admission_no : '';
+            DB::table('transactions')->insert([
+                'type'        => 'Income',
+                'head'        => $fee->type ?? 'Fee Payment',
+                'amount'      => $fee->paid,
+                'date'        => now()->toDateString(),
+                'description' => "Fee payment ({$fee->type}) for {$studentName} ({$admNo})",
+                'created_at'  => now(),
+                'updated_at'  => now(),
+            ]);
+        }
+
         return response()->json($fee->load('student'), 201);
+    }
+
+    /**
+     * Collect payment by student ID or admission number.
+     * POST /fees/collect
+     */
+    public function collect(Request $request)
+    {
+        $request->validate([
+            'amount'       => 'required|numeric|min:1',
+            'payment_mode' => 'nullable|string',
+        ]);
+
+        $student = null;
+        if ($request->filled('student_id')) {
+            $student = Student::find($request->student_id);
+        }
+        if (!$student && $request->filled('admission_no')) {
+            $adm = trim($request->admission_no);
+            $student = Student::where('admission_no', $adm)
+                ->orWhere('admission_no', 'like', "%$adm%")
+                ->first();
+        }
+
+        if (!$student) {
+            return response()->json(['message' => 'Student not found.'], 404);
+        }
+
+        $amount = (float)$request->amount;
+        $type   = $request->type ?? 'Tuition Fee';
+        $month  = $request->month ?? date('F');
+        $mode   = $request->payment_mode ?? 'Cash';
+
+        $lastReceipt = StudentFee::max('id') ?? 0;
+        $receiptNo = 'RCP' . date('Y') . str_pad($lastReceipt + 1, 5, '0', STR_PAD_LEFT);
+
+        $fee = StudentFee::create([
+            'student_id'   => $student->id,
+            'type'         => $type,
+            'month'        => $month,
+            'amount'       => $amount,
+            'paid'         => $amount,
+            'status'       => 'Paid',
+            'date'         => now()->toDateString(),
+            'payment_mode' => $mode,
+            'receipt_no'   => $receiptNo,
+            'collected_by' => $request->user()?->id,
+        ]);
+
+        // Automatically record into Income
+        $studentName = trim("{$student->first_name} {$student->last_name}") ?: $student->name;
+        DB::table('transactions')->insert([
+            'type'        => 'Income',
+            'head'        => 'Fee Collection',
+            'amount'      => $amount,
+            'date'        => now()->toDateString(),
+            'description' => "Fee payment ({$type}) for {$studentName} ({$student->admission_no})",
+            'created_at'  => now(),
+            'updated_at'  => now(),
+        ]);
+
+        return response()->json([
+            'message' => "Fee of ₹{$amount} collected successfully and logged to Income.",
+            'fee'     => $fee->load('student'),
+            'receipt' => $receiptNo,
+        ], 201);
     }
 
     /**

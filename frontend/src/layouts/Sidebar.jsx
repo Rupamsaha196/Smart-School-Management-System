@@ -53,7 +53,7 @@ const menuSections = [
       { label: 'Marks Entry', path: '/exams/marks', icon: HiOutlineClipboardDocumentList, roles: ['super_admin', 'admin', 'teacher'] },
       { label: 'Admit Card', path: '/exams/admit-card', icon: HiOutlineDocumentText, roles: ['super_admin', 'admin', 'teacher', 'student', 'parent'] },
       { label: 'Library', path: '/operations/library', icon: HiOutlineBookOpen, roles: ['super_admin', 'admin', 'librarian', 'teacher', 'student'] },
-      { label: 'Transport', path: '/operations/transport', icon: HiOutlineTruck, roles: ['super_admin', 'admin'] },
+      { label: 'Transport', path: '/operations/transport', icon: HiOutlineTruck, roles: ['super_admin', 'admin', 'parent', 'student'] },
       { label: 'Hostel', path: '/operations/hostel', icon: HiOutlineBuildingOffice, roles: ['super_admin', 'admin'] },
     ],
   },

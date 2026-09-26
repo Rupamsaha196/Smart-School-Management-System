@@ -116,9 +116,14 @@ export default function StudentProfile() {
             <p className="subtitle">Admission No: {s.admission_no}</p>
           </div>
         </div>
-        <button className="btn btn-primary" onClick={() => navigate('/students/admission', { state: { student: s, isEdit: true } })}>
-          <HiOutlinePencil size={16} /> Edit Profile
-        </button>
+        <div className="flex gap-2">
+          <button className="btn btn-secondary" onClick={() => navigate('/students/tc', { state: { admissionNo: s.admission_no } })}>
+            <HiOutlineDocumentText size={16} /> Download TC
+          </button>
+          <button className="btn btn-primary" onClick={() => navigate('/students/admission', { state: { student: s, isEdit: true } })}>
+            <HiOutlinePencil size={16} /> Edit Profile
+          </button>
+        </div>
       </div>
 
       {/* Profile Header Card */}
